@@ -10,15 +10,13 @@ import {
   BlockHeader,
 } from "../utils/interfaces/interfaces";
 
-import { Multicall } from "../abi/multicall";
+
 import { Position, PositionSnapshot, Token } from "../model";
 import { BlockMap } from "../utils/blockMap";
 import {
   ADDRESS_ZERO,
   FACTORY_ADDRESS,
-  MULTICALL_ADDRESS,
   POSITIONS_ADDRESS,
-  MULTICALL_PAGE_SIZE,
 } from "../utils/constants";
 import { EntityManager } from "../utils/entityManager";
 import { last, processItem } from "../utils/tools";
@@ -289,16 +287,8 @@ function createPosition(positionId: string) {
 }
 
 async function initPositions(ctx: BlockHandlerContext<Store>, ids: string[]) {
-  const multicall = new Multicall(ctx, MULTICALL_ADDRESS);
-
-  const positionResults = await multicall.tryAggregate(
-    positionsAbi.functions.positions,
-    POSITIONS_ADDRESS,
-    ids.map((id) => {
-      return { tokenId: BigInt(id) };
-    }),
-    MULTICALL_PAGE_SIZE
-  );
+  const positionsContract = new positionsAbi.Contract(ctx, POSITIONS_ADDRESS);
+  const factoryContract = new factoryAbi.Contract(ctx, FACTORY_ADDRESS);
 
   const positionsData: {
     positionId: string;
@@ -306,43 +296,46 @@ async function initPositions(ctx: BlockHandlerContext<Store>, ids: string[]) {
     token1Id: string;
     fee: number;
   }[] = [];
-  for (let i = 0; i < ids.length; i++) {
-    const result = positionResults[i];
-    if (result.success) {
+
+  // Fetch position data for each ID
+  for (const id of ids) {
+    try {
+      const result = await positionsContract.positions(BigInt(id));
       positionsData.push({
-        positionId: ids[i].toLowerCase(),
-        token0Id: result.value.token0.toLowerCase(),
-        token1Id: result.value.token1.toLowerCase(),
-        fee: result.value.fee,
+        positionId: id.toLowerCase(),
+        token0Id: result.token0.toLowerCase(),
+        token1Id: result.token1.toLowerCase(),
+        fee: result.fee,
       });
+    } catch (error) {
+      ctx.log.warn(`Failed to fetch position ${id}: ${error}`);
     }
   }
 
-  const poolIds = await multicall.aggregate(
-    factoryAbi.functions.getPool,
-    FACTORY_ADDRESS,
-    positionsData.map((p) => {
-      return {
-        tokenA: p.token0Id,
-        tokenB: p.token1Id,
-        fee: p.fee
-      };
-    }),
-    MULTICALL_PAGE_SIZE
-  );
-
   const positions: Position[] = [];
-  for (let i = 0; i < positionsData.length; i++) {
-    const position = createPosition(positionsData[i].positionId);
-    position.token0Id = positionsData[i].token0Id;
-    position.token1Id = positionsData[i].token1Id;
-    position.poolId = poolIds[i].toLowerCase();
+  
+  // Get pool addresses and create positions
+  for (const posData of positionsData) {
+    try {
+      const poolId = await factoryContract.getPool(
+        posData.token0Id,
+        posData.token1Id,
+        posData.fee
+      );
 
-    // temp fix
-    if (position.poolId === "0x8fe8d9bb8eeba3ed688069c3d6b556c9ca258248")
-      continue;
+      const position = createPosition(posData.positionId);
+      position.token0Id = posData.token0Id;
+      position.token1Id = posData.token1Id;
+      position.poolId = poolId.toLowerCase();
 
-    positions.push(position);
+      // temp fix
+      if (position.poolId === "0x8fe8d9bb8eeba3ed688069c3d6b556c9ca258248")
+        continue;
+
+      positions.push(position);
+    } catch (error) {
+      ctx.log.warn(`Failed to get pool for position ${posData.positionId}: ${error}`);
+    }
   }
 
   return positions;
@@ -352,24 +345,15 @@ async function updateFeeVars(
   ctx: BlockHandlerContext<Store>,
   positions: Position[]
 ) {
-  const multicall = new Multicall(ctx, MULTICALL_ADDRESS);
+  const positionsContract = new positionsAbi.Contract(ctx, POSITIONS_ADDRESS);
 
-  const positionResult = await multicall.tryAggregate(
-    positionsAbi.functions.positions,
-    POSITIONS_ADDRESS,
-    positions.map((p) => {
-      return { tokenId: BigInt(p.id) };
-    }),
-    MULTICALL_PAGE_SIZE
-  );
-
-  for (let i = 0; i < positions.length; i++) {
-    const result = positionResult[i];
-    if (result.success) {
-      positions[i].feeGrowthInside0LastX128 =
-        result.value.feeGrowthInside0LastX128;
-      positions[i].feeGrowthInside1LastX128 =
-        result.value.feeGrowthInside1LastX128;
+  for (const position of positions) {
+    try {
+      const result = await positionsContract.positions(BigInt(position.id));
+      position.feeGrowthInside0LastX128 = result.feeGrowthInside0LastX128;
+      position.feeGrowthInside1LastX128 = result.feeGrowthInside1LastX128;
+    } catch (error) {
+      ctx.log.warn(`Failed to update fee vars for position ${position.id}: ${error}`);
     }
   }
 }

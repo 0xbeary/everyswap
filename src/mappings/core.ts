@@ -8,7 +8,7 @@ import {
 import { DataHandlerContext, assertNotNull } from "@subsquid/evm-processor";
 
 import { Store } from "@subsquid/typeorm-store";
-import { Multicall } from "../abi/multicall";
+
 import * as poolAbi from "../abi/pool";
 import {
   Bundle,
@@ -31,8 +31,6 @@ import { safeDiv } from "../utils";
 import { BlockMap } from "../utils/blockMap";
 import {
   FACTORY_ADDRESS,
-  MULTICALL_ADDRESS,
-  MULTICALL_PAGE_SIZE,
 } from "../utils/constants";
 import { EntityManager } from "../utils/entityManager";
 import {
@@ -632,7 +630,6 @@ async function processSwapData(
   block: BlockHeader,
   data: SwapData
 ): Promise<void> {
-  if (data.poolId == "0x9663f2ca0454accad3e094448ea6f77443880454") return;
 
   let bundle = await ctx.entities.getOrFail(Bundle, "1");
   let factory = await ctx.entities.getOrFail(Factory, FACTORY_ADDRESS);
@@ -1356,22 +1353,17 @@ async function updateTickFeeVars(
   ctx: BlockHandlerContext<Store>,
   ticks: Tick[]
 ): Promise<void> {
-  // not all ticks are initialized so obtaining null is expected behavior
-  let multicall = new Multicall(ctx, MULTICALL_ADDRESS);
-
-  const tickResult = await multicall.aggregate(
-    poolAbi.functions.ticks,
-    ticks.map<[string, {tick: bigint}]>((t) => {
-      return [t.poolId, {
-        tick: t.tickIdx
-      }];
-    }),
-    MULTICALL_PAGE_SIZE
-  );
-
-  for (let i = 0; i < ticks.length; i++) {
-    ticks[i].feeGrowthOutside0X128 = tickResult[i].feeGrowthOutside0X128;
-    ticks[i].feeGrowthOutside1X128 = tickResult[i].feeGrowthOutside1X128;
+  // Update each tick's fee growth vars by calling the pool contract directly
+  for (const tick of ticks) {
+    try {
+      const poolContract = new poolAbi.Contract(ctx, tick.poolId);
+      const tickResult = await poolContract.ticks(tick.tickIdx);
+      tick.feeGrowthOutside0X128 = tickResult.feeGrowthOutside0X128;
+      tick.feeGrowthOutside1X128 = tickResult.feeGrowthOutside1X128;
+    } catch (error) {
+      // Skip ticks that are not initialized or contracts that fail
+      ctx.log.warn(`Failed to update tick fee vars for tick ${tick.id}: ${error}`);
+    }
   }
 }
 
@@ -1379,23 +1371,20 @@ async function updatePoolFeeVars(
   ctx: BlockHandlerContext<Store>,
   pools: Pool[]
 ): Promise<void> {
-  let multicall = new Multicall(ctx, MULTICALL_ADDRESS);
-
-  const calls: [string, {}][] = pools.map((p) => {return [p.id, {}];})
-  let fee0 = await multicall.aggregate(
-    poolAbi.functions.feeGrowthGlobal0X128,
-    calls,
-    MULTICALL_PAGE_SIZE
-  );
-  let fee1 = await multicall.aggregate(
-    poolAbi.functions.feeGrowthGlobal1X128,
-    calls,
-    MULTICALL_PAGE_SIZE
-  );
-
-  for (let i = 0; i < pools.length; i++) {
-    pools[i].feeGrowthGlobal0X128 = fee0[i];
-    pools[i].feeGrowthGlobal1X128 = fee1[i];
+  // Update each pool's fee growth vars by calling the pool contract directly
+  for (const pool of pools) {
+    try {
+      const poolContract = new poolAbi.Contract(ctx, pool.id);
+      const [feeGrowthGlobal0X128, feeGrowthGlobal1X128] = await Promise.all([
+        poolContract.feeGrowthGlobal0X128(),
+        poolContract.feeGrowthGlobal1X128(),
+      ]);
+      pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128;
+      pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128;
+    } catch (error) {
+      // Skip pools that fail to return fee data
+      ctx.log.warn(`Failed to update pool fee vars for pool ${pool.id}: ${error}`);
+    }
   }
 }
 

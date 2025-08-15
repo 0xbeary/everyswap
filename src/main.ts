@@ -1,3 +1,5 @@
+import { config } from "dotenv";
+
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 
 import { processor } from "./processor";
@@ -25,7 +27,11 @@ import {
   UniswapDayData,
 } from "./model";
 
-processor.run(new TypeormDatabase(), async (ctx) => {
+config();
+
+processor.run(new TypeormDatabase({
+  supportHotBlocks: true,
+}), async (ctx) => {
   const entities = new EntityManager(ctx.store);
   const entitiesCtx = { ...ctx, entities };
 
@@ -35,8 +41,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   await processPositions(entitiesCtx, ctx.blocks);
 
   await ctx.store.save(entities.values(Bundle));
-  await ctx.store.save(entities.values(Factory));
   await ctx.store.save(entities.values(Token));
+  await ctx.store.save(entities.values(Factory));
   await ctx.store.save(entities.values(Pool));
   await ctx.store.save(entities.values(Tick));
   await ctx.store.insert(entities.values(Tx));
