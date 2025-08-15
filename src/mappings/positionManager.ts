@@ -89,7 +89,7 @@ async function prefetch(
     if (!ctx.entities.get(Position, id, false)) newPositionIds.push(id);
   }
 
-  const newPositions = await initPositions({ ...ctx, block }, newPositionIds);
+  const newPositions = await initPositions({ ...ctx, block } as any, newPositionIds);
   for (const position of newPositions) {
     ctx.entities.add(position);
   }
@@ -101,7 +101,7 @@ async function prefetch(
   await ctx.entities.load(Token);
 }
 
-function processItems(ctx: CommonHandlerContext<unknown>, blocks: BlockData[]) {
+function processItems(ctx: ContextWithEntityManager, blocks: BlockData[]) {
   let eventsData = new BlockMap<EventData>();
 
   for (let block of blocks) {

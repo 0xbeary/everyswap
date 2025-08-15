@@ -4,7 +4,6 @@ import {
   assertNotNull,
 } from "@subsquid/evm-processor";
 import {
-  BatchBlock,
   BlockHandlerContext,
   CommonHandlerContext,
   LogItem,
@@ -16,7 +15,7 @@ import { Bundle, Factory, Pool, Token } from "../model";
 import { BlockMap } from "../utils/blockMap";
 import { ADDRESS_ZERO, FACTORY_ADDRESS } from "../utils/constants";
 import { EntityManager } from "../utils/entityManager";
-import { USDC_WETH_03_POOL, WHITELIST_TOKENS } from "../utils/pricing";
+import { WHITELIST_TOKENS } from "../utils/pricing";
 import {
   fetchTokensDecimals,
   fetchTokensName,
@@ -35,6 +34,7 @@ interface PairCreatedData {
 
 type ContextWithEntityManager = DataHandlerContext<Store> & {
   entities: EntityManager;
+  block?: any;
 };
 
 // export class FactoryProcessor extends MappingProcessor<Item> {
@@ -94,7 +94,7 @@ export async function processFactory(
   }
 
   await syncTokens(
-    { ...ctx, block: last(blocks).header },
+    { ...ctx, block: last(blocks).header } as any,
     ctx.entities.values(Token)
   );
 
@@ -121,7 +121,7 @@ async function prefetch(
 }
 
 async function processItems(
-  ctx: CommonHandlerContext<unknown>,
+  ctx: ContextWithEntityManager,
   blocks: BlockData[]
 ) {
   let newPairsData = new BlockMap<PairCreatedData>();
@@ -225,15 +225,14 @@ function createPool(id: string, token0Id: string, token1Id: string) {
   return pool;
 }
 
-async function syncTokens(ctx: BlockHandlerContext<Store>, tokens: Token[]) {
+async function syncTokens(ctx: ContextWithEntityManager, tokens: Token[]) {
   const ids = tokens.map((t) => t.id);
 
   const [symbols, names, totalSupplies, decimals] = await Promise.all([
-    fetchTokensSymbol(ctx, ids),
-    fetchTokensName(ctx, ids),
-    fetchTokensTotalSupply(ctx, ids),
-
-    fetchTokensDecimals(ctx, ids),
+    fetchTokensSymbol(ctx as any, ids),
+    fetchTokensName(ctx as any, ids),
+    fetchTokensTotalSupply(ctx as any, ids),
+    fetchTokensDecimals(ctx as any, ids),
   ]);
   //ctx.log.info(ids);
 

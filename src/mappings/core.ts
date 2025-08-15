@@ -50,7 +50,6 @@ import {
   getTrackedAmountUSD,
   MINIMUM_ETH_LOCKED,
   sqrtPriceX96ToTokenPrices,
-  STABLE_COINS,
   USDC_WETH_03_POOL,
   WETH_ADDRESS,
   WHITELIST_TOKENS
@@ -110,11 +109,11 @@ export async function processPairs(
 
   await Promise.all([
     updatePoolFeeVars(
-      { ...ctx, block: last(blocks).header },
+      { ...ctx, block: last(blocks).header } as any,
       ctx.entities.values(Pool)
     ),
     updateTickFeeVars(
-      { ...ctx, block: last(blocks).header },
+      { ...ctx, block: last(blocks).header } as any,
       ctx.entities.values(Tick)
     ),
   ]);

@@ -1,15 +1,11 @@
-import { In } from "typeorm";
-import { DataHandlerContext, assertNotNull } from "@subsquid/evm-processor";
-import { Store, TypeormDatabase } from "@subsquid/typeorm-store";
-import * as factoryAbi from "./abi/factory";
-import * as poolAbi from "./abi/pool";
+import { TypeormDatabase } from "@subsquid/typeorm-store";
 
-import { Block, Fields, Log, Transaction, processor } from "./processor";
+import { processor } from "./processor";
 import { EntityManager } from "./utils/entityManager";
 import { processFactory } from "./mappings/factory";
 import { processPairs } from "./mappings/core";
 import { processPositions } from "./mappings/positionManager";
-export const FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
+
 import {
   Bundle,
   Burn,
@@ -28,9 +24,6 @@ import {
   Tx,
   UniswapDayData,
 } from "./model";
-import { TransactionItem } from "./utils/interfaces/interfaces";
-import { EvmLog } from "@subsquid/evm-processor/src/interfaces/evm";
-let factoryPools: Set<string>;
 
 processor.run(new TypeormDatabase(), async (ctx) => {
   const entities = new EntityManager(ctx.store);

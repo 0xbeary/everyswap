@@ -1,6 +1,6 @@
 import assert from 'assert'
 import {lookupArchive} from '@subsquid/archive-registry'
-import {EvmBatchProcessor} from '@subsquid/evm-processor'
+import {EvmBatchProcessor, assertNotNull} from '@subsquid/evm-processor'
 import {Database, LocalDest} from '@subsquid/file-store'
 import * as factoryAbi from '../abi/factory'
 import {
@@ -11,7 +11,10 @@ import {
 const processor = new EvmBatchProcessor()
   .setDataSource({
     archive: lookupArchive('eth-mainnet'),
-    chain: {url: 'https://rpc.ankr.com/eth', maxBatchCallSize: 10},
+    chain: {
+      url: assertNotNull(process.env.RPC_ETH_HTTP, "Please provide an RPC endpoint at RPC_ETH_HTTP"),
+      maxBatchCallSize: 10,
+    },
   })
   .setBlockRange({
     from: FACTORY_DEPLOYED_AT,
