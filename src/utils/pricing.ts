@@ -1,6 +1,6 @@
 /* eslint-disable prefer-const */
 
-export const WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
+export const WETH_ADDRESS = "0x653e645e3d81a72e71328bc01a04002945e3ef7a";
 export const USDC_WETH_03_POOL = "0x30c1be25cdd0a7ce8ca217d6a177e107b04fe1af";
 
 // token where amounts should contribute to tracked volume and liquidity
