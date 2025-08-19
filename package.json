@@ -2,7 +2,11 @@
   "name": "squid-evm-template",
   "private": true,
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "chart:dev": "cd chart && npm run dev",
+    "chart:build": "cd chart && npm run build",
+    "chart:start": "cd chart && npm start",
+    "chart:install": "cd chart && npm install"
   },
   "dependencies": {
     "@subsquid/archive-registry": "^3.3.2",
