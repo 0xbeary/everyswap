@@ -1,36 +1,34 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SwapsDataTable, SwapData } from "@/components/swaps-data-table"
 
+const queryClient = new QueryClient()
+
+async function fetchSwaps(limit: number = 50) {
+  const response = await fetch(`/api/swaps?limit=${limit}`)
+  if (!response.ok) {
+    throw new Error('Failed to fetch swaps')
+  }
+  const data = await response.json()
+  return data.swaps as SwapData[]
+}
+
 export default function Home() {
-  const [swaps, setSwaps] = useState<SwapData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SwapsPage />
+    </QueryClientProvider>
+  )
+}
 
-  useEffect(() => {
-    const fetchSwaps = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/swaps?limit=50')
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch swaps')
-        }
-        
-        const data = await response.json()
-        setSwaps(data.swaps)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
-      } finally {
-        setLoading(false)
-      }
-    }
+function SwapsPage() {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['swaps', 50],
+    queryFn: () => fetchSwaps(50),
+  })
 
-    fetchSwaps()
-  }, [])
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading swaps...</div>
@@ -38,10 +36,10 @@ export default function Home() {
     )
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-red-500">Error: {error}</div>
+        <div className="text-lg text-red-500">Error: {(error as Error).message}</div>
       </div>
     )
   }
@@ -54,7 +52,7 @@ export default function Home() {
           Real-time swap transactions from the indexer
         </p>
       </div>
-      <SwapsDataTable data={swaps} />
+      <SwapsDataTable data={data ?? []} />
     </div>
   )
 }
