@@ -1,58 +1,24 @@
 "use client"
 
-import { useQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { SwapsDataTable, SwapData } from "@/components/swaps-data-table"
-
-const queryClient = new QueryClient()
-
-async function fetchSwaps(limit: number = 50) {
-  const response = await fetch(`/api/swaps?limit=${limit}`)
-  if (!response.ok) {
-    throw new Error('Failed to fetch swaps')
-  }
-  const data = await response.json()
-  return data.swaps as SwapData[]
-}
+import { SwapsDataTable } from "@/components/swaps-data-table"
+import { mockSwapData } from "@/data/mockSwaps"
 
 export default function Home() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <SwapsPage />
-    </QueryClientProvider>
-  )
-}
-
-function SwapsPage() {
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['swaps', 50],
-    queryFn: () => fetchSwaps(50),
-  })
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading swaps...</div>
-      </div>
-    )
-  }
-
-  if (isError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-red-500">Error: {(error as Error).message}</div>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto py-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Latest Swaps</h1>
         <p className="text-muted-foreground">
-          Latest Everyswap swap transactions
+          Latest Everyswap swap transactions (Tutorial Mode - Mock Data)
         </p>
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            📚 <strong>Tutorial Mode:</strong> This page is displaying mock data for demonstration purposes. 
+            In a real implementation, this would connect to your Squid indexer&apos;s GraphQL API to fetch live swap data.
+          </p>
+        </div>
       </div>
-      <SwapsDataTable data={data ?? []} />
+      <SwapsDataTable data={mockSwapData} />
     </div>
   )
 }
