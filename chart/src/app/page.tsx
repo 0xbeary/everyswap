@@ -49,7 +49,7 @@ function SwapsPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Latest Swaps</h1>
         <p className="text-muted-foreground">
-          Real-time swap transactions from the indexer
+          Latest Everyswap swap transactions
         </p>
       </div>
       <SwapsDataTable data={data ?? []} />

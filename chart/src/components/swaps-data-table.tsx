@@ -73,7 +73,7 @@ export const columns: ColumnDef<SwapData>[] = [
     cell: ({ row }) => {
       const pool = row.getValue("pool") as SwapData["pool"]
       return (
-        <div className="nes-text is-warning font-bold">
+        <div className="nes-text font-bold" style={{ color: '#333', fontWeight: 'bold' }}>
           {pool.token0.symbol}/{pool.token1.symbol}
         </div>
       )
@@ -189,7 +189,7 @@ export function SwapsDataTable({ data }: SwapsDataTableProps) {
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
-        <div className="nes-field max-w-sm">
+        <div className="nes-field max-w-sm bg-white">
           <input 
             type="text"
             className="nes-input"
@@ -199,8 +199,8 @@ export function SwapsDataTable({ data }: SwapsDataTableProps) {
           />
         </div>
       </div>
-      <div className="nes-container with-title is-rounded" style={{ padding: '2rem 1rem 1rem 1rem', overflow: 'hidden' }}>
-        <p className="title">🎮 Swap Data</p>
+      <div className="nes-container with-title bg-black is-rounded" style={{ padding: '2rem 1rem 1rem 1rem', overflow: 'hidden', backgroundColor: 'transparent' }}>
+        <p className="title" style={{ backgroundColor: 'transparent' }}>🎮 Swap Data</p>
         <div className="nes-table-responsive" style={{ padding: '0.5rem', overflow: 'auto', marginTop: '1rem' }}>
           <table className="nes-table is-bordered is-centered" style={{ width: '100%', tableLayout: 'fixed' }}>
             <thead>
@@ -253,14 +253,14 @@ export function SwapsDataTable({ data }: SwapsDataTableProps) {
         </div>
       </div>
       <div className="flex items-center justify-end space-x-4 py-4">
-        <div className="flex-1 nes-text is-disabled text-sm">
+        <div className="flex-1 nes-text text-sm" style={{ color: '#000' }}>
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="space-x-2">
           <button
             type="button"
-            className="nes-btn"
+            className={`nes-btn ${!table.getCanPreviousPage() ? 'is-disabled' : ''}`}
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
@@ -268,7 +268,7 @@ export function SwapsDataTable({ data }: SwapsDataTableProps) {
           </button>
           <button
             type="button"
-            className="nes-btn is-primary"
+            className={`nes-btn is-primary ${!table.getCanNextPage() ? 'is-disabled' : ''}`}
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
