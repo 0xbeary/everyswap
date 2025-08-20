@@ -1,5 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import "nes.css/css/nes.min.css";
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/* NES.css overrides and enhancements */
+.nes-container {
+  font-family: 'Press Start 2P', cursive !important;
+}
+
+.nes-table {
+  font-family: 'Press Start 2P', cursive !important;
+  font-size: 10px !important;
+}
+
+.nes-text {
+  font-family: 'Press Start 2P', cursive !important;
+  font-size: 10px !important;
+}
+
+.nes-btn {
+  font-family: 'Press Start 2P', cursive !important;
+  font-size: 10px !important;
+}
+
+.nes-input {
+  font-family: 'Press Start 2P', cursive !important;
+  font-size: 10px !important;
+}
 
 @custom-variant dark (&:is(.dark *));
 

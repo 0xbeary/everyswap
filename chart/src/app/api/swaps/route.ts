@@ -34,7 +34,6 @@ interface Swap {
   amount0: string;
   amount1: string;
   amountUSD: string;
-  sender: string;
   recipient: string;
   timestamp: string;
   transaction: Transaction;
@@ -55,7 +54,6 @@ const LATEST_SWAPS_QUERY = `
       amount0
       amount1
       amountUSD
-      sender
       recipient
       timestamp
       transaction {
@@ -121,8 +119,10 @@ export async function GET(request: Request) {
       );
     }
 
-    // Format the response for easier consumption
-    const formattedSwaps = result.data.swaps.map((swap: Swap) => ({
+    // Format the response for easier consumption and filter out swaps under $1 USD
+    const formattedSwaps = result.data.swaps
+      .filter((swap: Swap) => parseFloat(swap.amountUSD) > 1)
+      .map((swap: Swap) => ({
       id: swap.id,
       timestamp: swap.timestamp,
       blockNumber: swap.transaction.blockNumber,
@@ -133,7 +133,6 @@ export async function GET(request: Request) {
         amountUSD: swap.amountUSD,
       },
       addresses: {
-        sender: swap.sender,
         recipient: swap.recipient,
       },
       pool: {

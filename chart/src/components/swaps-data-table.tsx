@@ -14,17 +14,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-
 // Type definitions for the swap data from our API
 export type SwapData = {
   id: string
@@ -37,7 +26,6 @@ export type SwapData = {
     amountUSD: string
   }
   addresses: {
-    sender: string
     recipient: string
   }
   pool: {
@@ -68,12 +56,12 @@ export type SwapData = {
 export const columns: ColumnDef<SwapData>[] = [
   {
     accessorKey: "timestamp",
-    header: "Time",
+    header: "⏰ Time",
     cell: ({ row }) => {
       const timestamp = row.getValue("timestamp") as string
       const date = new Date(timestamp) // Parse ISO string directly
       return (
-        <div className="font-medium">
+        <div className="nes-text font-bold">
           {date.toLocaleTimeString()}
         </div>
       )
@@ -81,11 +69,11 @@ export const columns: ColumnDef<SwapData>[] = [
   },
   {
     accessorKey: "pool",
-    header: "Pool",
+    header: "🎮 Pool",
     cell: ({ row }) => {
       const pool = row.getValue("pool") as SwapData["pool"]
       return (
-        <div className="font-medium">
+        <div className="nes-text is-warning font-bold">
           {pool.token0.symbol}/{pool.token1.symbol}
         </div>
       )
@@ -94,7 +82,10 @@ export const columns: ColumnDef<SwapData>[] = [
   {
     accessorFn: (row) => row.amounts.amountUSD,
     id: "amountUSD",
-    header: "Amount USD",
+    header: () => {
+      return <div className="nes-text is-primary text-right">💰 Amount USD</div>
+    },
+    
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("amountUSD") as string)
       const formatted = new Intl.NumberFormat("en-US", {
@@ -102,30 +93,17 @@ export const columns: ColumnDef<SwapData>[] = [
         currency: "USD",
       }).format(amount)
 
-      return <div className="text-right font-medium">{formatted}</div>
-    },
-  },
-  {
-    accessorFn: (row) => row.addresses.sender,
-    id: "sender",
-    header: "Sender",
-    cell: ({ row }) => {
-      const address = row.getValue("sender") as string
-      return (
-        <div className="font-mono text-sm">
-          {address.slice(0, 6)}...{address.slice(-4)}
-        </div>
-      )
+      return <div className="nes-text is-success text-right font-bold">{formatted}</div>
     },
   },
   {
     accessorFn: (row) => row.addresses.recipient,
     id: "recipient", 
-    header: "Recipient",
+    header: "👤 Recipient",
     cell: ({ row }) => {
       const address = row.getValue("recipient") as string
       return (
-        <div className="font-mono text-sm">
+        <div className="nes-text font-mono text-sm">
           {address.slice(0, 6)}...{address.slice(-4)}
         </div>
       )
@@ -133,11 +111,11 @@ export const columns: ColumnDef<SwapData>[] = [
   },
   {
     accessorKey: "transactionId",
-    header: "Transaction",
+    header: "📄 Transaction",
     cell: ({ row }) => {
       const txId = row.getValue("transactionId") as string
       return (
-        <div className="font-mono text-sm">
+        <div className="nes-text font-mono text-sm">
           {txId.slice(0, 8)}...{txId.slice(-4)}
         </div>
       )
@@ -154,6 +132,7 @@ export function SwapsDataTable({ data }: SwapsDataTableProps) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+  const [globalFilter, setGlobalFilter] = React.useState("")
 
   const table = useReactTable({
     data,
@@ -166,98 +145,135 @@ export function SwapsDataTable({ data }: SwapsDataTableProps) {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, columnId, value) => {
+      const searchValue = value.toLowerCase().trim()
+      const rowData = row.original
+      
+      // Search in token symbols (with null checks)
+      const token0Symbol = (rowData.pool.token0.symbol || '').toLowerCase()
+      const token1Symbol = (rowData.pool.token1.symbol || '').toLowerCase()
+      
+      // Search in token names (with null checks)
+      const token0Name = (rowData.pool.token0.name || '').toLowerCase()
+      const token1Name = (rowData.pool.token1.name || '').toLowerCase()
+      
+      // Search in amount USD (convert to string first)
+      const amountUSD = String(rowData.amounts.amountUSD || '').toLowerCase()
+      
+      // Search in recipient address
+      const recipient = (rowData.addresses.recipient || '').toLowerCase()
+      
+      // Search in transaction ID
+      const transactionId = (rowData.transactionId || '').toLowerCase()
+      
+      return (
+        token0Symbol.includes(searchValue) ||
+        token1Symbol.includes(searchValue) ||
+        token0Name.includes(searchValue) ||
+        token1Name.includes(searchValue) ||
+        amountUSD.includes(searchValue) ||
+        recipient.includes(searchValue) ||
+        transactionId.includes(searchValue)
+      )
+    },
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      globalFilter,
     },
   })
 
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter by pool..."
-          value={(table.getColumn("pool")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("pool")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+        <div className="nes-field max-w-sm">
+          <input 
+            type="text"
+            className="nes-input"
+            placeholder="Filter by tokens, pool, or amount..."
+            value={globalFilter ?? ""}
+            onChange={(event) => setGlobalFilter(event.target.value)}
+          />
+        </div>
       </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+      <div className="nes-container with-title is-rounded" style={{ padding: '2rem 1rem 1rem 1rem', overflow: 'hidden' }}>
+        <p className="title">🎮 Swap Data</p>
+        <div className="nes-table-responsive" style={{ padding: '0.5rem', overflow: 'auto', marginTop: '1rem' }}>
+          <table className="nes-table is-bordered is-centered" style={{ width: '100%', tableLayout: 'fixed' }}>
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <th key={header.id} className="nes-text" style={{ wordWrap: 'break-word' }}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </th>
+                    )
+                  })}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className={row.getIsSelected() ? "is-success" : ""}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="nes-text is-error text-center py-8"
+                  >
+                    No results found!
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
+      <div className="flex items-center justify-end space-x-4 py-4">
+        <div className="flex-1 nes-text is-disabled text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            type="button"
+            className="nes-btn"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
             Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+          </button>
+          <button
+            type="button"
+            className="nes-btn is-primary"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
             Next
-          </Button>
+          </button>
         </div>
       </div>
     </div>
