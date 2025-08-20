@@ -21,7 +21,7 @@ interface Pool {
   token0Price: string;
   token1Price: string;
   volumeUSD: string;
-  tvlUSD: string;
+  totalValueLockedUSD: string;
 }
 
 interface Transaction {
@@ -81,7 +81,7 @@ const LATEST_SWAPS_QUERY = `
         token0Price
         token1Price
         volumeUSD
-        tvlUSD
+        totalValueLockedUSD
       }
     }
   }
@@ -156,7 +156,7 @@ export async function GET(request: Request) {
         },
         metrics: {
           volumeUSD: swap.pool.volumeUSD,
-          tvlUSD: swap.pool.tvlUSD,
+          totalValueLockedUSD: swap.pool.totalValueLockedUSD,
         },
       },
     }));

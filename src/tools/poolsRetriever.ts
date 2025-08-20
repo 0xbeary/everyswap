@@ -1,5 +1,4 @@
 import assert from 'assert'
-import {lookupArchive} from '@subsquid/archive-registry'
 import {EvmBatchProcessor, assertNotNull} from '@subsquid/evm-processor'
 import {Database, LocalDest} from '@subsquid/file-store'
 import * as factoryAbi from '../abi/factory'
@@ -9,13 +8,9 @@ import {
 } from '../utils/constants'
 
 const processor = new EvmBatchProcessor()
-  .setDataSource({
-    archive: lookupArchive('eth-mainnet'),
-    chain: {
-      url: assertNotNull(process.env.RPC_ETH_HTTP, "Please provide an RPC endpoint at RPC_ETH_HTTP"),
-      maxBatchCallSize: 10,
-    },
-  })
+  .setGateway('https://v2.archive.subsquid.io/network/memecore-mainnet')
+  .setRpcEndpoint(process.env.RPC_ETH_HTTP || 'https://rpc.memecore.net')
+  // maxBatchCallSize: 10
   .setBlockRange({
     from: FACTORY_DEPLOYED_AT,
   })

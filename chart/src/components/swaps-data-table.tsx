@@ -60,7 +60,7 @@ export type SwapData = {
     }
     metrics: {
       volumeUSD: string
-      tvlUSD: string
+      totalValueLockedUSD: string
     }
   }
 }
@@ -70,8 +70,8 @@ export const columns: ColumnDef<SwapData>[] = [
     accessorKey: "timestamp",
     header: "Time",
     cell: ({ row }) => {
-      const timestamp = parseInt(row.getValue("timestamp"))
-      const date = new Date(timestamp * 1000) // Convert from Unix timestamp
+      const timestamp = row.getValue("timestamp") as string
+      const date = new Date(timestamp) // Parse ISO string directly
       return (
         <div className="font-medium">
           {date.toLocaleTimeString()}
@@ -92,10 +92,11 @@ export const columns: ColumnDef<SwapData>[] = [
     },
   },
   {
-    accessorKey: "amounts.amountUSD",
+    accessorFn: (row) => row.amounts.amountUSD,
+    id: "amountUSD",
     header: "Amount USD",
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amounts.amountUSD") as string)
+      const amount = parseFloat(row.getValue("amountUSD") as string)
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
@@ -105,10 +106,11 @@ export const columns: ColumnDef<SwapData>[] = [
     },
   },
   {
-    accessorKey: "addresses.sender",
+    accessorFn: (row) => row.addresses.sender,
+    id: "sender",
     header: "Sender",
     cell: ({ row }) => {
-      const address = row.getValue("addresses.sender") as string
+      const address = row.getValue("sender") as string
       return (
         <div className="font-mono text-sm">
           {address.slice(0, 6)}...{address.slice(-4)}
@@ -117,10 +119,11 @@ export const columns: ColumnDef<SwapData>[] = [
     },
   },
   {
-    accessorKey: "addresses.recipient",
+    accessorFn: (row) => row.addresses.recipient,
+    id: "recipient", 
     header: "Recipient",
     cell: ({ row }) => {
-      const address = row.getValue("addresses.recipient") as string
+      const address = row.getValue("recipient") as string
       return (
         <div className="font-mono text-sm">
           {address.slice(0, 6)}...{address.slice(-4)}
