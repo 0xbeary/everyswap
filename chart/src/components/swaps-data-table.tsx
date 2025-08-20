@@ -189,7 +189,7 @@ export function SwapsDataTable({ data }: SwapsDataTableProps) {
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
-        <div className="nes-field max-w-sm bg-white">
+        <div className="nes-field max-w-sm  w-96 bg-white">
           <input 
             type="text"
             className="nes-input"
