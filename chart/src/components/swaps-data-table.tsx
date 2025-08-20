@@ -24,6 +24,9 @@ export type SwapData = {
     amount0: string
     amount1: string
     amountUSD: string
+    isBuy?: boolean
+    swapType?: string
+    amountColor?: string
   }
   addresses: {
     recipient: string
@@ -93,7 +96,19 @@ export const columns: ColumnDef<SwapData>[] = [
         currency: "USD",
       }).format(amount)
 
-      return <div className="nes-text is-success text-right font-bold">{formatted}</div>
+      // Determine if this is a buy or sell based on amount0 sign
+      const amounts = row.original.amounts
+      const isBuy = parseFloat(amounts.amount0) > 0
+      const color = isBuy ? '#22c55e' : '#ef4444' // green for buy, red for sell
+
+      return (
+        <div 
+          className="nes-text text-right font-bold" 
+          style={{ color }}
+        >
+          {formatted}
+        </div>
+      )
     },
   },
   {

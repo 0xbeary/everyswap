@@ -122,7 +122,13 @@ export async function GET(request: Request) {
     // Format the response for easier consumption and filter out swaps under $1 USD
     const formattedSwaps = result.data.swaps
       .filter((swap: Swap) => parseFloat(swap.amountUSD) > 1)
-      .map((swap: Swap) => ({
+      .map((swap: Swap) => {
+        // Determine if this is a buy or sell based on amount0 sign
+        // Negative amount0 typically means selling token0 for token1 (sell)
+        // Positive amount0 typically means buying token0 with token1 (buy)
+        const isBuy = parseFloat(swap.amount0) > 0;
+        
+        return {
       id: swap.id,
       timestamp: swap.timestamp,
       blockNumber: swap.transaction.blockNumber,
@@ -131,6 +137,9 @@ export async function GET(request: Request) {
         amount0: swap.amount0,
         amount1: swap.amount1,
         amountUSD: swap.amountUSD,
+        isBuy: isBuy,
+        swapType: isBuy ? 'buy' : 'sell',
+        amountColor: isBuy ? '#22c55e' : '#ef4444', // green for buy, red for sell
       },
       addresses: {
         recipient: swap.recipient,
@@ -158,7 +167,8 @@ export async function GET(request: Request) {
           totalValueLockedUSD: swap.pool.totalValueLockedUSD,
         },
       },
-    }));
+    };
+  });
 
     return NextResponse.json({
       success: true,
